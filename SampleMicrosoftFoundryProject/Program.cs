@@ -3,46 +3,59 @@
 using Azure.AI.Extensions.OpenAI;
 using Azure.AI.Projects;
 using Azure.Identity;
-using OpenAI;
 using OpenAI.Responses;
 
 #pragma warning disable OPENAI001
 
-const string endpoint = "https://YOUR-FOUNDRY-RESOURCE.services.ai.azure.com/api/projects/YOUR-PROJECT";
-const string agentName = "your-agent-name";
-const string userMessage = "Hi";
+const string endpoint = "https://aatishfoundry2026.services.ai.azure.com/api/projects/proj-default";
+const string model = "gpt-6-sol";
+const string instructions = "You are a helpful AI assistant that answers questions clearly and concisely.";
 
-// Skip managed identity on this machine; that probe blocks for about two minutes
-// and then fails the whole chain before Visual Studio or Azure CLI can sign in.
 DefaultAzureCredential credential = new(new DefaultAzureCredentialOptions
 {
     ExcludeManagedIdentityCredential = true,
     ExcludeWorkloadIdentityCredential = true,
 });
 
-// AIProjectClient is created with the Foundry project endpoint.
+// Create a project client with the endpoint and credential.
+// Authentication and endpoint go through AIProjectClient
 AIProjectClient projectClient = new(
     endpoint: new Uri(endpoint),
     tokenProvider: credential);
 
-// Get an agent-scoped Responses client from the project's OpenAI client.
-// Chat/responses go through the OpenAI-style client obtained from that project client.
-ProjectResponsesClient agentClient =
-    projectClient.ProjectOpenAIClient.GetProjectResponsesClientForAgentEndpoint(agentName);
-
-// Reuse the agent-scoped pipeline for conversations.
-ProjectConversationsClient conversationClient = new(
-    agentClient.Pipeline,
-    new OpenAIClientOptions { Endpoint = agentClient.Endpoint });
-
-ProjectConversation conversation = conversationClient.CreateProjectConversation();
-
-// Create a response on the conversation for this agent.
+// Get a responses client for the model.
 ProjectResponsesClient responseClient =
-    projectClient.ProjectOpenAIClient.GetProjectResponsesClientForAgentEndpoint(
-        agentName,
-        defaultConversationId: conversation.Id);
+    projectClient.ProjectOpenAIClient.GetProjectResponsesClientForModel(model);
 
-ResponseResult response = responseClient.CreateResponse(userMessage);
+string? lastResponseId = null;
 
-Console.WriteLine(response.GetOutputText());
+Console.WriteLine("Assistant: Enter a prompt (or type 'quit' to exit)");
+while (true)
+{
+    // Loop until the user quits.
+    Console.Write("\nYou: ");
+    string? inputText = Console.ReadLine();
+    if (inputText is null || inputText.Equals("quit", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.WriteLine("Assistant: Goodbye!");
+        break;
+    }
+
+    // Send message to the model and create response options.
+    CreateResponseOptions options = new()
+    {
+        Model = model,
+        Instructions = instructions,
+        PreviousResponseId = lastResponseId,
+        InputItems = { ResponseItem.CreateUserMessageItem(inputText) },
+    };
+
+    // Create response.
+    ResponseResult response = responseClient.CreateResponse(options);
+
+    // Print the response.
+    Console.WriteLine($"\nAssistant: {response.GetOutputText()}");
+
+    // Set the last response id.
+    lastResponseId = response.Id;
+}
