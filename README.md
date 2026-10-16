@@ -19,6 +19,37 @@ The key configuration values are defined in `SampleMicrosoftFoundryProject/Progr
 - `model`: deployed model name
 - `instructions`: system instructions for the assistant
 
+### SDKs Used
+This project uses the Microsoft Foundry SDK (Azure.AI.Projects) — the Azure/Azure AI Foundry SDK for .NET — as the primary SDK. It is not using the raw OpenAI SDK directly.
+
+It also uses `Azure.Identity` for authentication. The code imports some OpenAI-related types via `Azure.AI.Extensions.OpenAI` and `OpenAI.Responses`, but those are consumed through the Azure Foundry client surface (ProjectResponsesClient) rather than the standalone OpenAI SDK.
+
+Relevant project lines:
+
+From the project file (`SampleMicrosoftFoundryProject/SampleMicrosoftFoundryProject.csproj`):
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Azure.AI.Projects" Version="2.1.0-beta.4" />
+  <PackageReference Include="Azure.Identity" Version="1.21.0" />
+</ItemGroup>
+```
+
+From `SampleMicrosoftFoundryProject/Program.cs` (client construction):
+
+```csharp
+// Create a project client with the endpoint and credential.
+AIProjectClient projectClient = new(
+    endpoint: new Uri(endpoint),
+    tokenProvider: credential);
+
+// Get a responses client for the model.
+ProjectResponsesClient responseClient =
+    projectClient.ProjectOpenAIClient.GetProjectResponsesClientForModel(model);
+```
+
+The configured endpoint in the sample points to an Azure AI Foundry "services.ai.azure.com" endpoint, which confirms the Foundry integration.
+
 ## 3. Pre-requisites
 Before running the project, make sure you have:
 - .NET 10 SDK installed
