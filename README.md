@@ -14,6 +14,8 @@ This project is a minimal sample for working with Microsoft Azure AI Foundry in 
 
 The app reads user input from the terminal, sends it to the configured model, and prints the generated response. It is intended as a starting point for developers building AI-powered .NET applications on Azure AI Foundry.
 
+The OpenAI Responses API brings together capabilities from two previously separate APIs (ChatCompletions and Assistants) in a unified experience. This sample uses the Foundry project's Responses client surface to interact with that unified Responses API via the Microsoft Foundry SDK.
+
 The key configuration values are defined in `SampleMicrosoftFoundryProject/Program.cs`:
 - `endpoint`: Azure AI Foundry project endpoint
 - `model`: deployed model name
